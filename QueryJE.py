@@ -2,35 +2,54 @@ import socket
 
 
 class Server(object):
+    """
+    用于查询服务器信息
+    """
     def __init__(self, Address: str, Port: int):
+        """
+        构造函数
+
+        :param Address: 服务器地址
+        :param Port: 服务器端口
+        """
         self.Address = Address
         self.Port = Port
-        self.Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.AddressTuple = (self.Address, self.Port)
-        self.Socket.bind(("", 1234))
+        self.__Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.__AddressTuple = (self.Address, self.Port)
+        self.__Socket.bind(("", 1234))
 
     def BasicQuery(self) -> dict:
+        """
+        查询基础服务器信息
+
+        :return: 服务器信息字典
+        """
         TokenArray = self.__GetTokenArray()
         BasePacketArray = [0xFE, 0xFD, 0x00, 0x00, 0x00, 0x00, 0x01]
         BasePacketBytes = bytes(BasePacketArray)
         BasePacketBytes += self.__PackToken(TokenArray)
 
-        self.Socket.sendto(BasePacketBytes, self.AddressTuple)
+        self.__Socket.sendto(BasePacketBytes, self.__AddressTuple)
         return self.__HandleReceive()
 
     def FullQuery(self) -> dict:
+        """
+        查询完整服务器信息
+
+        :return: 服务器信息字典
+        """
         TokenArray = self.__GetTokenArray()
         BasePacketArray = [0xFE, 0xFD, 0x00, 0x00, 0x00, 0x00, 0x01]
         BasePacketBytes = bytes(BasePacketArray)
         BasePacketBytes += self.__PackToken(TokenArray) + bytes([0x00, 0x00, 0x00, 0x00])
 
-        self.Socket.sendto(BasePacketBytes, self.AddressTuple)
+        self.__Socket.sendto(BasePacketBytes, self.__AddressTuple)
         return self.__HandleReceive()
 
     def __HandleReceive(self) -> dict:
         try:
-            self.Socket.settimeout(15)
-            ReceiveData = self.Socket.recvfrom(4096)
+            self.__Socket.settimeout(15)
+            ReceiveData = self.__Socket.recvfrom(4096)
             ResponseData = ReceiveData[0]
             if ResponseData[0] == 0x09:
                 print("Token Receive")
@@ -114,7 +133,7 @@ class Server(object):
     def __Handshake(self):
         PacketArray = [0xFE, 0xFD, 0x09, 0x00, 0x00, 0x00, 0x01]  # 0x00, 0x00, 0x00, 0x01可以更改
         PacketBytes = bytes(PacketArray)
-        self.Socket.sendto(PacketBytes, self.AddressTuple)
+        self.__Socket.sendto(PacketBytes, self.__AddressTuple)
 
     @staticmethod
     def __PackToken(Token: list) -> bytes:
